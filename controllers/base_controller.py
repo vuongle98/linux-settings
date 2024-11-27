@@ -8,10 +8,13 @@ class BaseController:
         except subprocess.CalledProcessError as e:
             print(f"Error executing command: {e}")
 
-    def execute_check_command(self, command: list[str]):
+    def execute_check_command(self, command: list[str], shell=False, universal_newlines=False) -> str:
         try:
-            if len(command) != 2:
-                raise ValueError("Command must have 2 arguments")
-            return subprocess.check_output([command[0], command[1]]).decode().strip()
+            if not command:
+                raise ValueError("Command must has arguments")
+            result =  subprocess.check_output(command, shell=shell, universal_newlines=universal_newlines)
+            if shell:
+                return result.decode().strip()
+            return result.strip()
         except subprocess.CalledProcessError as e:
             print(f"Error executing command: {e}")
