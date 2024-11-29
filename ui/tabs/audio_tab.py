@@ -1,5 +1,5 @@
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QSlider, QComboBox, QFrame
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QSlider, QComboBox, QFrame, QTextEdit
 
 from controllers.audio_controller import AudioController
 
@@ -18,12 +18,18 @@ class AudioTab(QWidget):
 
         self.init_ui()
 
+        device = self.get_selected_device()
+        self.set_device_info(device)
+
 
     def init_ui(self):
         layout = QVBoxLayout()
 
         volume_frame = self.init_volume_control_ui()
         layout.addWidget(volume_frame)
+
+        device_info_frame = self.init_current_device_info_ui()
+        layout.addWidget(device_info_frame)
 
         # Stretch to fill space
         layout.addStretch()
@@ -48,7 +54,6 @@ class AudioTab(QWidget):
         # Audio Output
         self.audio_output_combo = QComboBox()
         self.audio_output_combo.addItems(self.get_audio_outputs())
-        self.audio_output_combo.addItem("Test")
         volume_layout.addWidget(QLabel("Audio Output:"))
         volume_layout.addWidget(self.audio_output_combo)
 
@@ -77,14 +82,29 @@ class AudioTab(QWidget):
 
         return volume_frame
 
+    def init_current_device_info_ui(self):
+        device_info_frame = QFrame()
+        device_info_frame.setFrameShape(QFrame.Shape.StyledPanel)
+        device_info_frame.setFrameShadow(QFrame.Shadow.Raised)
+
+        device_info_layout = QVBoxLayout()
+
+        device_info_title = QLabel("Device info:")
+        device_info_title.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 16px;")
+        device_info_layout.addWidget(device_info_title)
+
+        self.info_text = QTextEdit()
+        self.info_text.setReadOnly(True)
+        device_info_layout.addWidget(self.info_text)
+
+        device_info_frame.setLayout(device_info_layout)
+
+        return device_info_frame
+
     def refresh_audio_output(self):
         selected_device = self.get_selected_device()
 
-        if selected_device == "Select a device":
-            return
-
-        current_device_info = self.get_current_device_info()
-        print(current_device_info)
+        current_device_info = self.get_device_info(selected_device)
         if current_device_info is None:
             return
         current_volume = current_device_info["volume"]
@@ -92,12 +112,22 @@ class AudioTab(QWidget):
         # current_volume = self.get_current_volume()
         self.volume_slider.setValue(current_volume)
 
+        self.set_device_info(selected_device, current_device_info)
+
     def get_current_device_info(self):
         output_devices = self.audio_controller.list_audio_outputs_full()
 
         for device in output_devices:
             if device["status"] == "RUNNING":
                 return device
+        return None
+
+    def get_device_info(self, device: str):
+        output_devices = self.audio_controller.list_audio_outputs_full()
+
+        for d in output_devices:
+            if d["name"] == device:
+                return d
         return None
 
     def get_default_sink(self):
@@ -134,3 +164,10 @@ class AudioTab(QWidget):
 
     def get_audio_outputs(self):
         return self.audio_controller.list_audio_outputs()
+
+    def set_device_info(self, device: str, current_device_info: dict = None):
+        if current_device_info is None:
+            current_device_info = self.get_device_info(device)
+
+        info_str = "\n".join(f"{key}: {value}" for key, value in current_device_info.items())
+        self.info_text.setText(info_str)

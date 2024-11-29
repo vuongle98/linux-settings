@@ -12,7 +12,7 @@ class BaseController:
         try:
             if not command:
                 raise ValueError("Command must has arguments")
-            result =  subprocess.check_output(command, shell=shell, universal_newlines=universal_newlines)
+            result = subprocess.check_output(command, shell=shell, universal_newlines=universal_newlines)
             if shell:
                 return result.decode().strip()
             return result.strip()

@@ -37,10 +37,24 @@ class AudioController(BaseController):
         output_device_infos = self.execute_check_command(command, universal_newlines=True).splitlines()
 
         list_outputs = []
-        device_info = {}
-        for output_device_info in output_device_infos:
-            items = output_device_info.split("\t")
-            for item in items:
+        current_sink = []
+        sinks = []
+
+        # gather sinks info
+        for line in output_device_infos:
+            if line.startswith("Sink #") and current_sink:
+                sinks.append(current_sink)
+                current_sink = [line]
+            else:
+                current_sink.append(line)
+
+        if current_sink:
+            sinks.append(current_sink)
+
+        # parse sink info to usable object
+        for sink_items in sinks:
+            device_info = {}
+            for item in sink_items:
                 if "Name:" in item:
                     # Reset for the new device
                     device_info['name'] = item.split(":")[1].strip()
